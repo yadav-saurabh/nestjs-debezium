@@ -18,13 +18,13 @@ export class AppService {
 
   pauseCDC(connector: string) {
     return this.httpService
-      .put(`http://localhost:8083/connectors/${connector}/pause`)
+      .put(`http://localhost:8083/connectors/${connector}/pause`, {})
       .pipe(map((response) => response.data));
   }
 
   resumeCDC(connector: string) {
     return this.httpService
-      .put(`http://localhost:8083/connectors/${connector}/resume`)
+      .put(`http://localhost:8083/connectors/${connector}/resume`, {})
       .pipe(map((response) => response.data));
   }
 }
