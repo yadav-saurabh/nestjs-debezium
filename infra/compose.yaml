@@ -1,0 +1,82 @@
+networks:
+  nestjs-debezium-network:
+    name: nestjs-debezium-network
+    driver: bridge
+    external: false
+
+services:
+  nestjs-debezium-postgres:
+    image: debezium/postgres:16-alpine #!NOTE: latest is 3 years older version
+    container_name: nestjs-debezium-postgres
+    hostname: nestjs-debezium-postgres
+    restart: always
+    ports:
+      - ${DB_PORT}:5432
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_DB: ${DB_DATABASE}
+    networks:
+      - nestjs-debezium-network
+
+  nestjs-debezium-kafka:
+    image: bitnami/kafka
+    container_name: nestjs-debezium-kafka
+    hostname: nestjs-debezium-kafka
+    restart: always
+    ports:
+      - '9092:9092'
+    environment:
+      KAFKA_CFG_NODE_ID: 1
+      KAFKA_KRAFT_CLUSTER_ID: DxPyKmfmS52V9Z6mY5TZRA # base64 UUID
+      KAFKA_CFG_PROCESS_ROLES: controller,broker
+      # https://levelup.gitconnected.com/kraft-kafka-cluster-with-docker-e79a97d19f2c
+      KAFKA_CFG_LISTENERS: INTERNAL://nestjs-debezium-kafka:29092,CONTROLLER://nestjs-debezium-kafka:29093,EXTERNAL://0.0.0.0:9092
+      KAFKA_CFG_ADVERTISED_LISTENERS: INTERNAL://nestjs-debezium-kafka:29092,EXTERNAL://localhost:9092
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@nestjs-debezium-kafka:29093
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+    networks:
+      - nestjs-debezium-network
+
+  nestjs-debezium-connect:
+    image: debezium/connect
+    container_name: nestjs-debezium-connect
+    hostname: nestjs-debezium-connect
+    restart: always
+    ports:
+      - '8083:8083'
+    environment:
+      BOOTSTRAP_SERVERS: nestjs-debezium-kafka:29092
+      GROUP_ID: 1
+      CONFIG_STORAGE_TOPIC: my_connect_configs
+      OFFSET_STORAGE_TOPIC: my_connect_offsets
+      STATUS_STORAGE_TOPIC: my_connect_statuses
+      ENABLE_DEBEZIUM_SCRIPTING: 'true'
+    links:
+      - nestjs-debezium-kafka
+      - nestjs-debezium-postgres
+    networks:
+      - nestjs-debezium-network
+
+  nestjs-debezium-ui:
+    image: debezium/debezium-ui
+    depends_on:
+      - nestjs-debezium-connect
+    container_name: nestjs-debezium-ui
+    hostname: nestjs-debezium-ui
+    restart: always
+    ports:
+      - '8099:8080'
+    environment:
+      KAFKA_CONNECT_URIS: http://nestjs-debezium-connect:8083
+    links:
+      - nestjs-debezium-connect
+    networks:
+      - nestjs-debezium-network
+
+volumes:
+  nestjs-debezium-postgres-data:
+    name: nestjs-debezium-postgres-data
+    driver: local
