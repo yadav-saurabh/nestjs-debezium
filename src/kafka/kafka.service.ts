@@ -3,6 +3,7 @@ import {
   OnApplicationBootstrap,
   OnApplicationShutdown,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Consumer, Kafka } from 'kafkajs';
 
 @Injectable()
@@ -10,12 +11,13 @@ export class KafkaService
   implements OnApplicationShutdown, OnApplicationBootstrap
 {
   private readonly kafka: Kafka;
-
+  private readonly kafkaTopicPrefix: Kafka;
   private consumer: Consumer;
 
-  constructor() {
+  constructor(private configService: ConfigService) {
+    this.kafkaTopicPrefix = this.configService.get('KAFKA_TOPIC_PREFIX');
     this.kafka = new Kafka({
-      brokers: [`localhost:9092`],
+      brokers: [this.configService.get('KAFKA_BROKERS')],
     });
   }
 
@@ -30,13 +32,13 @@ export class KafkaService
   private async listen(): Promise<void> {
     try {
       const consumer = this.kafka.consumer({
-        groupId: 'console-consumer-24440',
+        groupId: this.configService.get('KAFKA_CONSUMER_GROUP_ID'),
       });
       this.consumer = consumer;
 
       await consumer.connect();
       await consumer.subscribe({
-        topics: ['nestjs-debezium-topic.public.user'],
+        topics: [`${this.kafkaTopicPrefix}.public.user`],
         fromBeginning: true,
       });
 
