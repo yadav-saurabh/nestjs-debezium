@@ -13,7 +13,8 @@ export class UsersService {
   ) {}
 
   create(createUserDto: CreateUserDto): Promise<User> {
-    return this.usersRepository.save(createUserDto);
+    const entity = this.usersRepository.create(createUserDto);
+    return this.usersRepository.save(entity);
   }
 
   findAll(): Promise<User[]> {
@@ -22,6 +23,10 @@ export class UsersService {
 
   findOne(id: number): Promise<User> {
     return this.usersRepository.findOneBy({ id: id });
+  }
+
+  update(id: number, data: CreateUserDto) {
+    return this.usersRepository.update({ id }, { ...data });
   }
 
   async remove(id: number): Promise<void> {
