@@ -41,40 +41,40 @@ Here is what you need.
     - Duplicate `.env.example` to `.env`
     - Configure environment variables in the `.env` file. Replace the placeholder values with their applicable values
 
-6. run docker compose to get all the services up and running
+6. Run docker compose to get all the services up and running
 
     ```bash
     docker-compose --env-file .env -f ./infra/compose.yaml up
     ```
 
-7. create connector (user connector)
+7. Create connector (user connector)
 
-    - from the debezium ui [`http://localhost:8080/`](http://localhost:8080/>)
+    - from the debezium ui [`http://localhost:8080/`](http://localhost:8080/)
     - from the cli using curl
 
-      ``` bash
-          # load the env
-          source .env
-          # create a connector (user-connector) for table user
-          curl --location 'http://localhost:8083/connectors' \
-              --header 'Accept: application/json' \
-              --header 'Content-Type: application/json' \
-              --data '{
-                "name": "user-connector",
-                "config": {
-                    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
-                    "database.hostname": "nestjs-debezium-postgres",
-                    "database.port": "5432",
-                    "database.user": "'$DB_USERNAME'",
-                    "database.password": "'$DB_PASSWORD'",
-                    "database.dbname": "'$DB_DATABASE'",
-                    "table.include.list": "public.user",
-                    "topic.prefix": "'$KAFKA_TOPIC_PREFIX'"
-                  }
-                }'
-      ```
+        ``` bash
+        # load the env
+        source .env
+        # create a connector (user-connector) for table user
+        curl --location 'http://localhost:8083/connectors' \
+            --header 'Accept: application/json' \
+            --header 'Content-Type: application/json' \
+            --data '{
+            "name": "user-connector",
+            "config": {
+                "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+                "database.hostname": "nestjs-debezium-postgres",
+                "database.port": "5432",
+                "database.user": "'$DB_USERNAME'",
+                "database.password": "'$DB_PASSWORD'",
+                "database.dbname": "'$DB_DATABASE'",
+                "table.include.list": "public.user",
+                "topic.prefix": "'$KAFKA_TOPIC_PREFIX'"
+                }
+            }'
+        ```
 
-8. run nestjs server
+8. Run nestjs server
 
     ```bash
     npm run dev
