@@ -47,34 +47,7 @@ Here is what you need.
     docker-compose --env-file .env -f ./infra/compose.yaml up
     ```
 
-7. Create connector (user connector)
-
-    - from the debezium ui [`http://localhost:8080/`](http://localhost:8080/)
-    - from the cli using curl
-
-        ``` bash
-        # load the env
-        source .env
-        # create a connector (user-connector) for table user
-        curl --location 'http://localhost:8083/connectors' \
-            --header 'Accept: application/json' \
-            --header 'Content-Type: application/json' \
-            --data '{
-            "name": "user-connector",
-            "config": {
-                "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
-                "database.hostname": "nestjs-debezium-postgres",
-                "database.port": "5432",
-                "database.user": "'$DB_USERNAME'",
-                "database.password": "'$DB_PASSWORD'",
-                "database.dbname": "'$DB_DATABASE'",
-                "table.include.list": "public.user",
-                "topic.prefix": "'$KAFKA_TOPIC_PREFIX'"
-                }
-            }'
-        ```
-
-8. Run nestjs server
+7. Run nestjs server
 
     ```bash
     npm run dev
@@ -82,16 +55,74 @@ Here is what you need.
 
 ## API'S
 
-### users
-
-- `POST /api/users` :- create a new user
-- `PATCH /api/users` :- update a user
-- `GET /api/users` :- get all users
-- `GET /api/users/:id` :- get a users
-- `DELETE /api/users/:id` :- get a users
-
 ### cdc
 
 - `GET /cdc/connectors` :- get all connectors
+- `POST /cdc/connectors` :- get all connectors
+    body:
+
+    ```json
+    {
+        "name": "string",
+        "config": {
+            "dbHost": "string",
+            "dbPort": "number",
+            "dbName": "string",
+            "dbTableName": "string",
+            "dbUsername": "string",
+            "dbPassword": "string",
+        }
+    }
+    ```
+
 - `PUT /cdc/pause` :- pause a connectors
+    body:
+
+    ```json
+    {
+        "connector": "string",
+    }
+    ```
+
 - `PUT /cdc/resume` :- resume a connectors
+    body:
+
+    ```json
+    {
+        "connector": "string",
+    }
+    ```
+
+## Test
+
+- Connect to psql cli `docker exec -it nestjs-debezium-postgres psql -U debezium -d nestjs-debezium`
+- Create database ex: `CREATE DATABASE db1;`
+- Connect to the database ex: `\c db1;`
+- Create table ex:
+
+    ```sql
+    CREATE TABLE employees (
+        id INT PRIMARY KEY,
+        first_name VARCHAR (120),
+        last_name VARCHAR (120),
+        department VARCHAR (120), 
+        salary DECIMAL (10,2)
+    );
+    ```
+
+- Add a connector for the database and table to perform cdc ex: `POST /cdc/connectors`
+
+- Perform CRUD on the table ex:
+
+    ```sql
+    INSERT INTO employees (id, first_name, last_name, department, salary) VALUES (1, 'Paul', 'Garrix', 'Corporate', 3547.25);
+    INSERT INTO employees (id, first_name, last_name, department, salary) VALUES (2, 'Astrid', 'Fox', 'Private Individuals', 2845.56);
+    INSERT INTO employees (id, first_name, last_name, department, salary) VALUES (3, 'Matthias', 'Johnson', 'Private Individuals', 3009.41);
+    INSERT INTO employees (id, first_name, last_name, department, salary) VALUES (4, 'Lucy', 'Patterson', 'Private Individuals', 3547.25);
+    INSERT INTO employees (id, first_name, last_name, department, salary) VALUES (5, 'Tom', 'Page', 'Corporate', 5974.41);
+    INSERT INTO employees (id, first_name, last_name, department, salary) VALUES (6, 'Claudia', 'Conte', 'Corporate', 4714.12);
+    INSERT INTO employees (id, first_name, last_name, department, salary) VALUES (7, 'Walter', 'Deer', 'Private Individuals', 3547.25);
+    INSERT INTO employees (id, first_name, last_name, department, salary) VALUES (8, 'Stephanie', 'Marx', 'Corporate', 2894.51);
+    INSERT INTO employees (id, first_name, last_name, department, salary) VALUES (9, 'Luca', 'Pavarotti', 'Private Individuals', 4123.45);
+    INSERT INTO employees (id, first_name, last_name, department, salary) VALUES (10, 'Victoria', 'Pollock', 'Corporate', 4789.53);
+    ```
