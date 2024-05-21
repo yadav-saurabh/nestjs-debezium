@@ -1,7 +1,7 @@
 import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { map } from 'rxjs';
+import { forkJoin, map } from 'rxjs';
 
 import { CreateCdcDto } from './dto/create-cdc.dto';
 
@@ -25,23 +25,31 @@ export class CdcService {
   }
 
   createConnectors(data: CreateCdcDto) {
-    const body = {
-      name: data.name,
-      config: {
-        'connector.class': CONNECTOR_CLASS[DEFAULT_CONNECTION],
-        'database.hostname': data.dbHost,
-        'database.port': data.dbPort,
-        'database.user': data.dbUsername,
-        'database.password': data.dbPassword,
-        'database.dbname': data.dbName,
-        'table.include.list': data.dbTableName,
-        'topic.prefix': `${this.kafkaTopicPrefix}.${data.dbName}.${data.name}`,
-        'slot.name': data.dbName,
-      },
-    };
-    return this.httpService
-      .post(`${this.DEBEZIUM_CONNECT_URL}/connectors`, body)
-      .pipe(map((response) => response.data));
+    return forkJoin(
+      data.config.map((config) => {
+        const body = {
+          name: config.connectorName,
+          config: {
+            'connector.class': CONNECTOR_CLASS[DEFAULT_CONNECTION],
+            'database.hostname': data.dbHost,
+            'database.port': data.dbPort,
+            'database.user': data.dbUsername,
+            'database.password': data.dbPassword,
+            'database.dbname': config.dbName,
+            'topic.prefix': `${this.kafkaTopicPrefix}.${config.dbName}.${config.connectorName}`,
+            'slot.name': config.dbName,
+          },
+        };
+        if (config.dbTableName && config.dbTableName.length) {
+          body.config['table.include.list'] = config.dbTableName
+            ? config.dbTableName.join(',')
+            : '';
+        }
+        return this.httpService
+          .post(`${this.DEBEZIUM_CONNECT_URL}/connectors`, body)
+          .pipe(map((response) => response.data));
+      }),
+    );
   }
 
   getConnectors() {

@@ -1,10 +1,31 @@
-import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  ArrayMinSize,
+  IsArray,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
 
-export class CreateCdcDto {
+class DatabaseDetails {
   @IsNotEmpty()
   @IsString()
-  name: string;
+  connectorName: string;
 
+  @IsNotEmpty()
+  @IsString()
+  dbName: string;
+
+  @IsOptional()
+  @IsNotEmpty()
+  @IsArray()
+  @IsString({ each: true })
+  dbTableName?: string[];
+}
+
+export class CreateCdcDto {
   @IsNotEmpty()
   @IsString()
   dbHost: string;
@@ -14,12 +35,11 @@ export class CreateCdcDto {
   dbPort: number;
 
   @IsNotEmpty()
-  @IsString()
-  dbName: string;
-
-  @IsNotEmpty()
-  @IsString()
-  dbTableName: string;
+  @IsArray()
+  @ArrayMinSize(2)
+  @ValidateNested({ each: true })
+  @Type(() => DatabaseDetails)
+  config: DatabaseDetails[];
 
   @IsNotEmpty()
   @IsString()

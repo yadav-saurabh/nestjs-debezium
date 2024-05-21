@@ -58,20 +58,20 @@ Here is what you need.
 ### cdc
 
 - `GET /cdc/connectors` :- get all connectors
-- `POST /cdc/connectors` :- get all connectors
+- `POST /cdc/connectors` :- create connectors
     body:
 
     ```json
     {
-        "name": "string",
-        "config": {
-            "dbHost": "string",
-            "dbPort": "number",
+        "dbHost": "string",
+        "dbPort": "number",
+        "dbUsername": "string",
+        "dbPassword": "string",
+        "config": [{
+            "connectorName": "string",
             "dbName": "string",
-            "dbTableName": "string",
-            "dbUsername": "string",
-            "dbPassword": "string",
-        }
+            "dbTableName": ["string"],
+        }]
     }
     ```
 
