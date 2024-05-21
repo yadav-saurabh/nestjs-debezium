@@ -41,9 +41,7 @@ export class CdcService {
           },
         };
         if (config.dbTableName && config.dbTableName.length) {
-          body.config['table.include.list'] = config.dbTableName
-            ? config.dbTableName.join(',')
-            : '';
+          body.config['table.include.list'] = config.dbTableName.join(',');
         }
         return this.httpService
           .post(`${this.DEBEZIUM_CONNECT_URL}/connectors`, body)
